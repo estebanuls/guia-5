@@ -89,8 +89,71 @@ def procesar_archivo(nombre: str):
 
 
 # ─────────────────────────────────────────────
+# Ciclo del demonio
+# ─────────────────────────────────────────────
+def ciclo_monitoreo():
+    """
+    Escanea entrada/ cada INTERVALO segundos.
+    Por cada archivo nuevo lanza un hilo de procesamiento.
+    """
+    registrar(f"Demonio iniciado — monitoreando cada {INTERVALO}s")
 
-#def ciclo_monitoreo():
+    while True:
+        try:
+            archivos = os.listdir(ENTRADA_DIR)
+        except FileNotFoundError:
+            registrar("ERROR: directorio entrada/ no encontrado, reintentando...")
+            time.sleep(INTERVALO)
+            continue
+
+        nuevos = []
+        with sesion_lock:
+            for archivo in archivos:
+                ruta = os.path.join(ENTRADA_DIR, archivo)
+                if os.path.isfile(ruta) and archivo not in procesados_en_sesion:
+                    nuevos.append(archivo)
+                    procesados_en_sesion.add(archivo)
+
+        if nuevos:
+            registrar(f"Nuevos archivos detectados: {nuevos}")
+            for nombre in nuevos:
+                hilo = threading.Thread(
+                    target=procesar_archivo,
+                    args=(nombre,),
+                    daemon=True,
+                    name=f"Proc-{nombre}"
+                )
+                hilo.start()
+        else:
+            print(f"  [{datetime.now().strftime('%H:%M:%S')}] Sin archivos nuevos en entrada/")
+
+        time.sleep(INTERVALO)
 
 
-#def main():
+# ─────────────────────────────────────────────
+# Main
+# ─────────────────────────────────────────────
+def main():
+    # Crear directorios si no existen
+    for d in (ENTRADA_DIR, PROCESADOS_DIR, LOGS_DIR):
+        os.makedirs(d, exist_ok=True)
+
+    print(f"""
+{'='*50}
+  DEMONIO DE PROCESAMIENTO
+  Base  : {BASE_DIR}
+  Ciclo : cada {INTERVALO} segundos
+  Semáforo: hasta 2 hilos simultáneos
+{'='*50}
+Presiona Ctrl+C para detener.
+""")
+
+    try:
+        ciclo_monitoreo()
+    except KeyboardInterrupt:
+        registrar("Demonio detenido por el usuario")
+        print("\n[!] Demonio detenido.")
+
+
+if __name__ == "__main__":
+    main()
