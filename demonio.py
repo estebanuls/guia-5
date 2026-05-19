@@ -1,20 +1,9 @@
-"""
-demonio.py — Proceso demonio que monitorea entrada/ y procesa archivos nuevos
-Guía 5: Sistema Multipropósito
-
-Ejecutar ANTES o en paralelo al servidor:
-    python3 demonio.py
-"""
-
 import os
 import shutil
 import threading
 import time
 from datetime import datetime
 
-# ─────────────────────────────────────────────
-# Configuración
-# ─────────────────────────────────────────────
 BASE_DIR = os.path.expanduser("~/servidor_archivos")
 ENTRADA_DIR = os.path.join(BASE_DIR, "entrada")
 PROCESADOS_DIR = os.path.join(BASE_DIR, "procesados")
@@ -23,7 +12,7 @@ LOG_FILE = os.path.join(BASE_DIR, "registro.log")
 
 INTERVALO = 10  # segundos entre cada escaneo
 
-# Semáforo: permite hasta 2 procesamientos simultáneos (ajustable)
+# Semáforo: permite hasta 2 procesamientos simultáneos
 semaforo = threading.Semaphore(2)
 
 # Mutex para acceso exclusivo al log (compartido con servidor si corre junto)
@@ -34,11 +23,10 @@ procesados_en_sesion: set = set()
 sesion_lock = threading.Lock()
 
 
-# ─────────────────────────────────────────────
 # Logging
-# ─────────────────────────────────────────────
+
 def registrar(mensaje: str):
-    """Escribe en registro.log con timestamp. Usa Lock para evitar corrupción."""
+
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     linea = f"[{timestamp}] [DEMONIO] {mensaje}\n"
     with log_lock:
@@ -47,9 +35,9 @@ def registrar(mensaje: str):
     print(f"  LOG → {linea.strip()}")
 
 
-# ─────────────────────────────────────────────
+
 # Procesamiento de archivo (se ejecuta en un hilo)
-# ─────────────────────────────────────────────
+
 def procesar_archivo(nombre: str):
     """
     Mueve un archivo de entrada/ a procesados/.
@@ -60,12 +48,12 @@ def procesar_archivo(nombre: str):
 
     semaforo.acquire()
     try:
-        # Verificar que sigue existiendo (otro hilo pudo procesarlo antes)
+        # Verificar que sigue existiendo 
         if not os.path.isfile(origen):
             registrar(f"'{nombre}' ya no existe en entrada/ (procesado por otro hilo)")
             return
 
-        # Simular procesamiento (en producción aquí iría lógica real)
+        # Simular procesamiento 
         time.sleep(1)
 
         shutil.move(origen, destino)
@@ -88,9 +76,9 @@ def procesar_archivo(nombre: str):
         semaforo.release()
 
 
-# ─────────────────────────────────────────────
+
 # Ciclo del demonio
-# ─────────────────────────────────────────────
+
 def ciclo_monitoreo():
     """
     Escanea entrada/ cada INTERVALO segundos.
@@ -130,9 +118,6 @@ def ciclo_monitoreo():
         time.sleep(INTERVALO)
 
 
-# ─────────────────────────────────────────────
-# Main
-# ─────────────────────────────────────────────
 def main():
     # Crear directorios si no existen
     for d in (ENTRADA_DIR, PROCESADOS_DIR, LOGS_DIR):
