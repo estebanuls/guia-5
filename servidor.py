@@ -1,8 +1,3 @@
-"""
-servidor.py — Servidor multihilo para gestión de archivos remotos
-Guía 5: Sistema Multipropósito
-"""
-
 import socket
 import threading
 import os
@@ -10,9 +5,9 @@ import shutil
 import json
 from datetime import datetime
 
-# ─────────────────────────────────────────────
+
 # Configuración
-# ─────────────────────────────────────────────
+
 HOST = "0.0.0.0"
 PORT = 9999
 BASE_DIR = os.path.expanduser("~/servidor_archivos")
@@ -26,9 +21,6 @@ log_lock = threading.Lock()
 file_lock = threading.Lock()
 
 
-# ─────────────────────────────────────────────
-# Utilidades
-# ─────────────────────────────────────────────
 def registrar(mensaje: str):
     """Escribe una línea en registro.log con timestamp. Protegido por Lock."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -48,7 +40,7 @@ def enviar_respuesta(conn: socket.socket, datos: dict):
 
 
 def recibir_mensaje(conn: socket.socket) -> dict | None:
-    """Lee cabecera + payload y devuelve el dict deserializado."""
+    
     try:
         header = b""
         while len(header) < 8:
@@ -70,9 +62,9 @@ def recibir_mensaje(conn: socket.socket) -> dict | None:
         return None
 
 
-# ─────────────────────────────────────────────
+
 # Comandos del servidor
-# ─────────────────────────────────────────────
+
 def cmd_listar(addr) -> dict:
     """Lista archivos en el directorio entrada/."""
     with file_lock:
@@ -146,9 +138,9 @@ def cmd_ver_logs(addr) -> dict:
     return {"ok": True, "logs": logs}
 
 
-# ─────────────────────────────────────────────
+
 # Hilo por cliente
-# ─────────────────────────────────────────────
+
 def manejar_cliente(conn: socket.socket, addr):
     """Función ejecutada en un hilo separado por cada cliente conectado."""
     print(f"\n[+] Cliente conectado: {addr}")
@@ -191,9 +183,9 @@ def manejar_cliente(conn: socket.socket, addr):
         print(f"[-] Cliente desconectado: {addr}")
 
 
-# ─────────────────────────────────────────────
+
 # Main
-# ─────────────────────────────────────────────
+
 def main():
     # Crear estructura de directorios si no existe
     for d in (ENTRADA_DIR, PROCESADOS_DIR, LOGS_DIR):
@@ -239,4 +231,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
