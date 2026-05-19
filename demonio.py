@@ -47,7 +47,48 @@ def registrar(mensaje: str):
     print(f"  LOG → {linea.strip()}")
 
 
-#def procesar_archivo(nombre: str):
+# ─────────────────────────────────────────────
+# Procesamiento de archivo (se ejecuta en un hilo)
+# ─────────────────────────────────────────────
+def procesar_archivo(nombre: str):
+    """
+    Mueve un archivo de entrada/ a procesados/.
+    Protegido por semáforo para limitar concurrencia.
+    """
+    origen = os.path.join(ENTRADA_DIR, nombre)
+    destino = os.path.join(PROCESADOS_DIR, nombre)
+
+    semaforo.acquire()
+    try:
+        # Verificar que sigue existiendo (otro hilo pudo procesarlo antes)
+        if not os.path.isfile(origen):
+            registrar(f"'{nombre}' ya no existe en entrada/ (procesado por otro hilo)")
+            return
+
+        # Simular procesamiento (en producción aquí iría lógica real)
+        time.sleep(1)
+
+        shutil.move(origen, destino)
+        registrar(f"'{nombre}' movido de entrada/ → procesados/")
+
+        # Registrar en logs/ también un archivo individual de confirmación
+        log_individual = os.path.join(LOGS_DIR, f"{nombre}.log")
+        with open(log_individual, "w") as lf:
+            lf.write(f"Procesado: {datetime.now().isoformat()}\n")
+            lf.write(f"Origen: {origen}\n")
+            lf.write(f"Destino: {destino}\n")
+
+    except FileNotFoundError:
+        registrar(f"ERROR: '{nombre}' no encontrado al intentar moverlo")
+    except PermissionError:
+        registrar(f"ERROR: sin permisos para mover '{nombre}'")
+    except Exception as e:
+        registrar(f"ERROR procesando '{nombre}': {e}")
+    finally:
+        semaforo.release()
+
+
+# ─────────────────────────────────────────────
 
 #def ciclo_monitoreo():
 
